@@ -1,8 +1,13 @@
 from nicegui import app, ui
+from nicegui.ui import navigate
 from tortoise.contrib.fastapi import register_tortoise
 
-from .routes import install
+from timesheet_py.models import User
+
 from . import auth  # noqa: F401
+from .components.header import header
+from .routes import install
+from .routes import user as user_route
 
 register_tortoise(
     app,
@@ -15,14 +20,19 @@ app.include_router(install.router)
 
 
 @ui.page("/")
-def index():
+async def index():
     def logout() -> None:
         app.storage.user.clear()
         ui.navigate.to("/login")
 
-    with ui.column().classes("absolute-center items-center"):
-        ui.label(f"Hello {app.storage.user['username']}!").classes("text-2xl")
-        ui.button(on_click=logout, icon="logout").props("outline round")
+    user = await User.filter(email=app.storage.user["email"]).first()
+    if user is None:
+        ui.navigate.to("/login")
+        return
+
+    header(user)
+
+    pass
 
 
 secret = "nB1NgSC1EbOtojVIpZ2TGBhpUTs1h6R1U4jFpfJXA+c="

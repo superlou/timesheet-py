@@ -28,6 +28,12 @@ class AuthMiddleWare(BaseHTTPMiddleware):
         return RedirectResponse(f"/login?redirect_to={path}")
 
 
+@ui.page("/logout")
+async def logout() -> None:
+    app.storage.user.clear()
+    ui.navigate.to("/login")
+
+
 @ui.page("/login")
 async def login(redirect_to: str = "/") -> RedirectResponse | None:
     if app.storage.user.get("authenticated"):
@@ -40,8 +46,8 @@ async def login(redirect_to: str = "/") -> RedirectResponse | None:
             password.value.encode("utf-8"), user.password_hash.encode("utf-8")
         ):
             app.storage.user.update(
-                username=email.value,
                 authenticated=True,
+                email=user.email,
                 admin=user.admin,
             )
             ui.navigate.to(redirect_to)
