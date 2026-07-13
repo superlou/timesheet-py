@@ -1,5 +1,7 @@
+from typing import Annotated
+
 import bcrypt
-from fastapi import Request
+from fastapi import Depends, Request
 from fastapi.responses import RedirectResponse
 from nicegui import app, ui
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -26,6 +28,16 @@ class AuthMiddleWare(BaseHTTPMiddleware):
             return await call_next(request)
 
         return RedirectResponse(f"/login?redirect_to={path}")
+
+
+async def get_user() -> User:
+    user = await User.filter(email=app.storage.user["email"]).first()
+    if user is None:
+        raise Exception()
+    return user
+
+
+CurrentUser = Annotated[User, Depends(get_user)]
 
 
 @ui.page("/logout")

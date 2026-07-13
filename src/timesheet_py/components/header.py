@@ -16,4 +16,10 @@ def header(user: User):
                     ui.icon("person")
                     ui.label(user.email)
 
+            if user.admin:
+                with ui.link(target="/admin"):
+                    with ui.row().classes("text-white items-center"):
+                        ui.icon("settings")
+                        ui.label("Admin")
+
             ui.button(on_click=auth.logout, icon="logout")

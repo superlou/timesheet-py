@@ -6,7 +6,8 @@ from timesheet_py.models import User
 
 from . import auth  # noqa: F401
 from .components.header import header
-from .routes import install
+from .routes import admin as admin_route
+from .routes import install as install_route
 from .routes import user as user_route
 
 register_tortoise(
@@ -15,8 +16,8 @@ register_tortoise(
     modules={"models": ["timesheet_py.models"]},
 )
 
-
-app.include_router(install.router)
+app.include_router(install_route.router)
+app.include_router(admin_route.router)
 
 
 @ui.page("/")

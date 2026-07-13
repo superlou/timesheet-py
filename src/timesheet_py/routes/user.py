@@ -1,18 +1,14 @@
 from nicegui import app, ui
 
+from timesheet_py.auth import CurrentUser
 from timesheet_py.components.header import header
 from timesheet_py.models import User
 
 
 @ui.page("/user")
-async def user():
+async def user(user: CurrentUser):
     async def update_user():
         await user.save()
-
-    user = await User.filter(email=app.storage.user["email"]).first()
-    if user is None:
-        ui.navigate.to("/login")
-        return
 
     header(user)
 
