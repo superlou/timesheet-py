@@ -1,7 +1,10 @@
+from datetime import date, timedelta
+
 from tortoise.fields import (
     BooleanField,
     CharField,
     DateField,
+    FloatField,
     ForeignKeyField,
     IntField,
     ManyToManyField,
@@ -31,6 +34,26 @@ class TimesheetSet(Model):
         related_name="timesheet_sets",
         through="timesheetset_submitter",
     )
+
+    @property
+    def dates(self) -> list[date]:
+        num_days = (self.finish - self.start).days + 1
+        return [self.start + timedelta(days=i) for i in range(num_days)]
+
+
+class TimesheetRow(Model):
+    id = IntField(pk=True)
+    timesheet_set = ForeignKeyField("models.TimesheetSet")
+    user = ForeignKeyField("models.User")
+    project = ForeignKeyField("models.Project")
+    activity = ForeignKeyField("models.Activity")
+
+
+class TimesheetEntry(Model):
+    id = IntField(pk=True)
+    timesheet_row = ForeignKeyField("models.TimesheetRow", related_name="entries")
+    date = DateField()
+    hours = FloatField()
 
 
 class Project(Model):

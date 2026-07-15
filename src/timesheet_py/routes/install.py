@@ -7,7 +7,7 @@ from nicegui import APIRouter, app, ui
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 
-from ..models import Activity, Project, TimesheetSet, User
+from ..models import Activity, Project, TimesheetEntry, TimesheetRow, TimesheetSet, User
 
 router = APIRouter(prefix="/install")
 
@@ -36,6 +36,7 @@ async def install():
 
         await User.create(
             email=email.value,
+            name=name.value,
             password_hash=password_hash,
             admin=True,
         )
@@ -45,6 +46,7 @@ async def install():
         ui.notify("Installation completed!")
 
     ui.label("Initial admin account")
+    name = ui.input("Name")
     email = ui.input("Email")
     password = ui.input("Password", password=True, password_toggle_button=True)
 
@@ -77,13 +79,31 @@ async def load_demo_data():
     ts = await TimesheetSet.create(
         start=date(2026, 7, 12),
         finish=date(2026, 7, 18),
+        open=False,
     )
     await ts.submitters.add(*await User.all())
 
-    await Activity.create(code="10", name="Engineering")
-    await Activity.create(code="20", name="Training")
-    await Activity.create(code="90", name="Vacation")
+    ts = await TimesheetSet.create(
+        start=date(2026, 7, 12),
+        finish=date(2026, 7, 18),
+    )
+    await ts.submitters.add(*await User.all())
 
-    await Project.create(code="1053.1", name="Fast Forward Project")
-    await Project.create(code="1060.8", name="Rewind Project")
-    await Project.create(code="1097.0", name="Reboot Project", open=False)
+    a1 = await Activity.create(code="10", name="Engineering")
+    a2 = await Activity.create(code="20", name="Training")
+    a3 = await Activity.create(code="90", name="Vacation")
+
+    p1 = await Project.create(code="1053.1", name="Fast Forward Project")
+    p2 = await Project.create(code="1060.8", name="Rewind Project")
+    p3 = await Project.create(code="5001.0", name="Vacation", open=False)
+
+    tr1 = await TimesheetRow.create(
+        timesheet_set=ts, user=await User.get(id=1), project=p1, activity=a1
+    )
+    await TimesheetEntry.create(timesheet_row=tr1, date=date(2026, 7, 13), hours=3)
+    await TimesheetEntry.create(timesheet_row=tr1, date=date(2026, 7, 14), hours=5)
+
+    tr2 = await TimesheetRow.create(
+        timesheet_set=ts, user=await User.get(id=1), project=p2, activity=a1
+    )
+    await TimesheetEntry.create(timesheet_row=tr2, date=date(2026, 7, 15), hours=8)
