@@ -8,6 +8,7 @@ from tortoise.fields import (
     ForeignKeyField,
     IntField,
     ManyToManyField,
+    OnDelete,
 )
 from tortoise.models import Model
 
@@ -51,7 +52,11 @@ class TimesheetRow(Model):
 
 class TimesheetEntry(Model):
     id = IntField(pk=True)
-    timesheet_row = ForeignKeyField("models.TimesheetRow", related_name="entries")
+    timesheet_row = ForeignKeyField(
+        "models.TimesheetRow",
+        related_name="entries",
+        on_delete=OnDelete.CASCADE,
+    )
     date = DateField()
     hours = FloatField()
 

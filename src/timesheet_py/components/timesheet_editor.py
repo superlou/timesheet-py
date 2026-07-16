@@ -49,8 +49,6 @@ class TimesheetEditor(Element):
 
             self.render_totals()
 
-        ui.button("Save")
-
     def render_header(self):
         ui.label("Project")
         ui.label("Code")
