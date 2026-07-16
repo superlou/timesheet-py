@@ -39,9 +39,13 @@ class TimesheetEditor(Element):
         self.activities = {-1: ""} | activities
         self.render()
 
+    def grid_template_cols(self):
+        cols = ["auto", "auto"] + ["auto"] * len(self.dates) + ["auto", "auto"]
+        return " ".join(cols)
+
     @ui.refreshable_method
     def render(self) -> None:
-        with ui.grid(columns=len(self.dates) + 4).classes("items-center"):
+        with ui.grid(columns=self.grid_template_cols()).classes("items-center"):
             self.render_header()
 
             for row in self.rows:
@@ -54,7 +58,7 @@ class TimesheetEditor(Element):
         ui.label("Code")
 
         for d in self.dates:
-            ui.label(f"{d.strftime('%a')} {d.month}/{d.day}")
+            ui.html(f"{d.strftime('%a')}<br/>{d.month}/{d.day}").classes("text-center")
 
         ui.label("Total")
         ui.label("")
@@ -68,10 +72,16 @@ class TimesheetEditor(Element):
             value = str(row.hours[d] or "")
             ui.input(value=value).props("outlined").on_value_change(
                 lambda evt, d=d: row.set_hours_from_text(d, evt.value)
-            ).on_value_change(self.render_totals.refresh)
+            ).on_value_change(self.render_totals.refresh).props(
+                "input-style='text-align:center'"
+            )
 
-        ui.label().bind_text(row, "total_hours")
-        ui.button(icon="delete", on_click=lambda: self.delete_row(row))
+        ui.label().bind_text_from(
+            row, "total_hours", backward=lambda x: f"{x:.1f}"
+        ).classes("text-right")
+        ui.button(icon="delete", on_click=lambda: self.delete_row(row)).props(
+            "flat  padding=xs"
+        )
 
     @ui.refreshable_method
     def render_totals(self):
@@ -87,11 +97,11 @@ class TimesheetEditor(Element):
                 for date in row.hours
                 if date == column_date
             )
-            ui.label(str(date_hours))
+            ui.label(f"{date_hours:.1f}").classes("text-center")
             all_hours.append(date_hours)
 
-        ui.label(str(sum(all_hours)))
-        ui.button(icon="add", on_click=self.add_row)
+        ui.label(f"{sum(all_hours):.1f}").classes("text-right")
+        ui.button(icon="add", on_click=self.add_row).props("flat padding=xs")
 
     def add_row(self):
         self.rows.append(
