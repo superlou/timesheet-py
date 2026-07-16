@@ -20,9 +20,7 @@ async def timesheet_for_current_user(timesheet_set_id: int, user: CurrentUser):
     rows = [
         TimesheetEditorRow(
             project_id=r.project.id,
-            project_name=r.project.name,
             activity_id=r.activity.id,
-            activity_name=r.activity.name,
             hours={
                 d: sum(entry.hours for entry in r.entries if entry.date == d)
                 for d in timesheet_set.dates
@@ -32,7 +30,8 @@ async def timesheet_for_current_user(timesheet_set_id: int, user: CurrentUser):
             timesheet_set=timesheet_set, user=user
         ).prefetch_related("entries", "project", "activity")
     ]
-    timesheet_editor = TimesheetEditor(
+
+    TimesheetEditor(
         timesheet_set.dates,
         rows,
         {p.id: p.name for p in await Project.all()},
