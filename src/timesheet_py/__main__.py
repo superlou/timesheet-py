@@ -46,8 +46,8 @@ async def index(
 
     for timesheet_set in open_timesheet_sets:
         ui.label(f"{timesheet_set.start} through {timesheet_set.start}")
-        for user in timesheet_set.submitters:
-            with ui.list().props("dense separator"):
+        with ui.list().props("dense separator"):
+            for user in timesheet_set.submitters:
                 if current_user == user:
                     with ui.item():
                         ui.link(

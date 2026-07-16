@@ -55,7 +55,7 @@ class TimesheetEditor(Element):
 
     def render_header(self):
         ui.label("Project")
-        ui.label("Code")
+        ui.label("Activity")
 
         for d in self.dates:
             ui.html(f"{d.strftime('%a')}<br/>{d.month}/{d.day}").classes("text-center")
@@ -65,8 +65,8 @@ class TimesheetEditor(Element):
 
     @ui.refreshable_method
     def render_row(self, row: TimesheetEditorRow):
-        ui.select(self.projects).bind_value(row, "project_id")
-        ui.select(self.activities).bind_value(row, "activity_id")
+        ui.select(self.projects).bind_value(row, "project_id").props("outlined")
+        ui.select(self.activities).bind_value(row, "activity_id").props("outlined")
 
         for d in self.dates:
             value = str(row.hours[d] or "")
