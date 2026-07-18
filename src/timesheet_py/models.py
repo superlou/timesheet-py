@@ -52,6 +52,11 @@ class Timesheet(Model):
     created_at = DatetimeField(auto_now_add=True)
     saved_at = DatetimeField(null=True)
     submitted_at = DatetimeField(null=True)
+    approved_by = ForeignKeyField(
+        "models.User", related_name="timesheets_approved", null=True
+    )
+    approved_at = DatetimeField(null=True)
+
     timesheet_rows: ReverseRelation["TimesheetRow"]
 
     @property
@@ -59,8 +64,12 @@ class Timesheet(Model):
         return self.submitted_at is not None
 
     @property
+    def approved(self):
+        return self.approved_at is not None
+
+    @property
     def editable(self):
-        return not self.submitted
+        return not (self.submitted or self.approved) and self.timesheet_set.open
 
 
 class TimesheetRow(Model):

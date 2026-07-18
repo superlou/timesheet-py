@@ -27,7 +27,7 @@ app.include_router(timesheet_route.router)
 
 async def open_timesheet_sets() -> list[TimesheetSet]:
     return await TimesheetSet.filter(open=True).prefetch_related(
-        "timesheets", "timesheets__user"
+        "timesheets", "timesheets__user", "timesheets__user__approvers"
     )
 
 
@@ -40,15 +40,14 @@ async def index(
     open_timesheet_sets: OpenTimesheetSets,
     request: Request,
 ):
-    def logout() -> None:
-        app.storage.user.clear()
-        ui.navigate.to("/login")
-
     header(current_user)
 
     def timesheet_status(timesheet: Timesheet):
-        if timesheet.submitted:
-            value = 0.333
+        if timesheet.approved:
+            value = 1.0
+            label = "Approved"
+        elif timesheet.submitted:
+            value = 0.5
             label = "Submitted"
         else:
             value = 0
@@ -58,16 +57,24 @@ async def index(
             with html.div().classes("absolute-full flex flex-center"):
                 ui.label(label).classes("text-white text-caption")
 
-    def timesheet_status_row(timesheet: Timesheet):
+    def timesheet_link(timesheet: Timesheet):
         if current_user == timesheet.user:
             ui.link(
                 timesheet.user.name,
                 str(request.url_for("timesheet", timesheet_id=timesheet.id)),
             )
+        elif current_user in timesheet.user.approvers and timesheet.submitted:
+            with html.span():
+                ui.label(timesheet.user.name)
+                ui.link(
+                    "(approve)",
+                    str(request.url_for("timesheet", timesheet_id=timesheet.id)),
+                )
         else:
             ui.label(timesheet.user.name)
 
-        # ui.label().bind_text_from(timesheet, "submitted", lambda x: "✓" if x else "")
+    def timesheet_status_row(timesheet: Timesheet):
+        timesheet_link(timesheet)
         timesheet_status(timesheet)
 
     for timesheet_set in open_timesheet_sets:

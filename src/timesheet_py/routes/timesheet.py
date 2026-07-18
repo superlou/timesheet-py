@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from fastapi import HTTPException
 from nicegui import APIRouter, ui
 from tortoise.transactions import in_transaction
 
@@ -17,29 +18,48 @@ from timesheet_py.models import (
 router = APIRouter(prefix="/timesheet")
 
 
+def can_view_timesheet(timesheet: Timesheet, current_user: CurrentUser) -> bool:
+    return timesheet.user == current_user or current_user in timesheet.user.approvers
+
+
 @router.page("/{timesheet_id}")
-async def timesheet(timesheet_id: int, user: CurrentUser):
-    header(user)
+async def timesheet(timesheet_id: int, current_user: CurrentUser):
+    header(current_user)
 
     timesheet = await Timesheet.get(id=timesheet_id).prefetch_related(
         "timesheet_set",
         "timesheet_rows",
+        "approved_by",
         "timesheet_rows__project",
         "timesheet_rows__activity",
         "timesheet_rows__entries",
+        "user",
+        "user__approvers",
     )
     timesheet_set = timesheet.timesheet_set
 
+    if not can_view_timesheet(timesheet, current_user):
+        raise HTTPException(status_code=403)
+
     ui.label(
-        f"Timesheet for {user.name}, {timesheet_set.start} to {timesheet_set.finish}"
+        f"Timesheet for {timesheet.user.name}, {timesheet_set.start} to {timesheet_set.finish}"
     )
 
     @ui.refreshable
     def actions():
         with ui.button_group():
-            if timesheet.submitted:
+            if not timesheet_set.open:
+                pass
+            elif timesheet.approved:
                 ui.button("Save").props("disabled")
                 ui.button("Edit", on_click=lambda: edit_timesheet(timesheet))
+                if current_user in timesheet.user.approvers:
+                    ui.button("Unapprove", on_click=lambda: unapprove_timesheet())
+            elif timesheet.submitted:
+                ui.button("Save").props("disabled")
+                ui.button("Edit", on_click=lambda: edit_timesheet(timesheet))
+                if current_user in timesheet.user.approvers:
+                    ui.button("Approve", on_click=lambda: approve_timesheet())
             else:
                 ui.button("Save", on_click=lambda: save_timesheet(timesheet, rows))
                 ui.button("Submit", on_click=lambda: submit_timesheet(timesheet))
@@ -95,5 +115,19 @@ async def timesheet(timesheet_id: int, user: CurrentUser):
 
     async def edit_timesheet(timesheet: Timesheet):
         timesheet.submitted_at = None
+        timesheet.approved_at = None
+        timesheet.approved_by = None
+        await timesheet.save()
+        actions.refresh()
+
+    async def approve_timesheet():
+        timesheet.approved_at = datetime.now()
+        timesheet.approved_by = current_user
+        await timesheet.save()
+        actions.refresh()
+
+    async def unapprove_timesheet():
+        timesheet.approved_at = None
+        timesheet.approved_by = None
         await timesheet.save()
         actions.refresh()
