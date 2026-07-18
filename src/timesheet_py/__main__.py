@@ -1,11 +1,11 @@
 from typing import Annotated
 
 from fastapi import Depends, Request
-from nicegui import app, ui
+from nicegui import app, html, ui
 from tortoise.contrib.fastapi import register_tortoise
 
 from timesheet_py.auth import CurrentUser
-from timesheet_py.models import TimesheetSet, User
+from timesheet_py.models import Timesheet, TimesheetSet, User
 
 from . import auth  # noqa: F401
 from .components.header import header
@@ -46,23 +46,35 @@ async def index(
 
     header(current_user)
 
+    def timesheet_status(timesheet: Timesheet):
+        if timesheet.submitted:
+            value = 0.333
+            label = "Submitted"
+        else:
+            value = 0
+            label = ""
+
+        with ui.linear_progress(value, show_value=False, size="1.4em").classes("w-24"):
+            with html.div().classes("absolute-full flex flex-center"):
+                ui.label(label).classes("text-white text-caption")
+
+    def timesheet_status_row(timesheet: Timesheet):
+        if current_user == timesheet.user:
+            ui.link(
+                timesheet.user.name,
+                str(request.url_for("timesheet", timesheet_id=timesheet.id)),
+            )
+        else:
+            ui.label(timesheet.user.name)
+
+        # ui.label().bind_text_from(timesheet, "submitted", lambda x: "✓" if x else "")
+        timesheet_status(timesheet)
+
     for timesheet_set in open_timesheet_sets:
         ui.label(f"{timesheet_set.start} through {timesheet_set.start}")
-        with ui.list().props("dense separator"):
+        with ui.grid(columns=2).classes("items-center"):
             for timesheet in timesheet_set.timesheets:
-                if current_user == timesheet.user:
-                    with ui.item():
-                        ui.link(
-                            timesheet.user.name,
-                            str(
-                                request.url_for(
-                                    "timesheet",
-                                    timesheet_id=timesheet.id,
-                                )
-                            ),
-                        )
-                else:
-                    ui.item(timesheet.user.name)
+                timesheet_status_row(timesheet)
 
 
 secret = "nB1NgSC1EbOtojVIpZ2TGBhpUTs1h6R1U4jFpfJXA+c="

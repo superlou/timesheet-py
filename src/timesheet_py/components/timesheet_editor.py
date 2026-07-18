@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from datetime import date
+from typing import Any, Self
 
-from nicegui import ui
-from nicegui.element import Element
+from nicegui import binding, ui
 
 
 @dataclass
@@ -25,18 +25,24 @@ class TimesheetEditorRow:
             pass
 
 
-class TimesheetEditor(Element):
+class TimesheetEditor(ui.element):
+    # todo Convert readonly to a nicegui bindable property
+    # readonly = binding.BindableProperty()
+
     def __init__(
         self,
         dates: list[date],
         rows: list[TimesheetEditorRow],
         projects: dict[int, str],
         activities: dict[int, str],
+        readonly_binding: tuple[Any, str],
     ):
         self.dates = dates
         self.rows = rows
         self.projects = {-1: ""} | projects
         self.activities = {-1: ""} | activities
+        self.readonly_binding = readonly_binding
+
         self.render()
 
     def grid_template_cols(self):
@@ -65,23 +71,48 @@ class TimesheetEditor(Element):
 
     @ui.refreshable_method
     def render_row(self, row: TimesheetEditorRow):
-        ui.select(self.projects).bind_value(row, "project_id").props("outlined")
-        ui.select(self.activities).bind_value(row, "activity_id").props("outlined")
+        projects_select = (
+            ui.select(self.projects).bind_value(row, "project_id").props("outlined")
+        )
+        activities_select = (
+            ui.select(self.activities).bind_value(row, "activity_id").props("outlined")
+        )
+
+        if self.readonly_binding:
+            projects_select.bind_enabled_from(
+                self.readonly_binding[0], self.readonly_binding[1]
+            )
+            activities_select.bind_enabled_from(
+                self.readonly_binding[0], self.readonly_binding[1]
+            )
 
         for d in self.dates:
             value = str(row.hours[d] or "")
-            ui.input(value=value).props("outlined").on_value_change(
-                lambda evt, d=d: row.set_hours_from_text(d, evt.value)
-            ).on_value_change(self.render_totals.refresh).props(
-                "input-style='text-align:center'"
+            hour_input = (
+                ui.input(value=value)
+                .props("outlined")
+                .on_value_change(lambda evt, d=d: row.set_hours_from_text(d, evt.value))
+                .on_value_change(self.render_totals.refresh)
+                .props("input-style='text-align:center'")
             )
+
+            if self.readonly_binding:
+                hour_input.bind_enabled_from(
+                    self.readonly_binding[0], self.readonly_binding[1]
+                )
 
         ui.label().bind_text_from(
             row, "total_hours", backward=lambda x: f"{x:.1f}"
         ).classes("text-right")
-        ui.button(icon="delete", on_click=lambda: self.delete_row(row)).props(
-            "flat  padding=xs"
-        )
+
+        deleted_button = ui.button(
+            icon="delete", on_click=lambda: self.delete_row(row)
+        ).props("flat  padding=xs")
+
+        if self.readonly_binding:
+            deleted_button.bind_enabled_from(
+                self.readonly_binding[0], self.readonly_binding[1]
+            )
 
     @ui.refreshable_method
     def render_totals(self):
@@ -101,7 +132,14 @@ class TimesheetEditor(Element):
             all_hours.append(date_hours)
 
         ui.label(f"{sum(all_hours):.1f}").classes("text-right")
-        ui.button(icon="add", on_click=self.add_row).props("flat padding=xs")
+        add_button = ui.button(icon="add", on_click=self.add_row).props(
+            "flat padding=xs"
+        )
+
+        if self.readonly_binding:
+            add_button.bind_enabled_from(
+                self.readonly_binding[0], self.readonly_binding[1]
+            )
 
     def add_row(self):
         self.rows.append(

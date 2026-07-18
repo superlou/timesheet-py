@@ -34,6 +34,18 @@ async def timesheet(timesheet_id: int, user: CurrentUser):
         f"Timesheet for {user.name}, {timesheet_set.start} to {timesheet_set.finish}"
     )
 
+    @ui.refreshable
+    def actions():
+        with ui.button_group():
+            if timesheet.submitted:
+                ui.button("Save").props("disabled")
+                ui.button("Edit", on_click=lambda: edit_timesheet(timesheet))
+            else:
+                ui.button("Save", on_click=lambda: save_timesheet(timesheet, rows))
+                ui.button("Submit", on_click=lambda: submit_timesheet(timesheet))
+
+    actions()
+
     rows = [
         TimesheetEditorRow(
             project_id=r.project.id,
@@ -51,29 +63,37 @@ async def timesheet(timesheet_id: int, user: CurrentUser):
         rows,
         {p.id: p.name for p in await Project.all()},
         {a.id: a.name for a in await Activity.all()},
+        (timesheet, "editable"),
     )
 
-    ui.button("Save", on_click=lambda: save_timesheet(timesheet, rows))
-    ui.label().bind_text_from(timesheet, "saved_at", lambda x: f"Last saved on {x}")
+    async def save_timesheet(timesheet: Timesheet, rows):
+        async with in_transaction() as _conn:
+            await TimesheetRow.filter(timesheet=timesheet).delete()
 
-
-async def save_timesheet(timesheet: Timesheet, rows):
-    async with in_transaction() as _conn:
-        await TimesheetRow.filter(timesheet=timesheet).delete()
-
-        for row in rows:
-            timesheet_row = await TimesheetRow.create(
-                timesheet=timesheet,
-                project_id=row.project_id,
-                activity_id=row.activity_id,
-            )
-
-            for date, hours in row.hours.items():
-                await TimesheetEntry.create(
-                    date=date, hours=hours, timesheet_row=timesheet_row
+            for row in rows:
+                timesheet_row = await TimesheetRow.create(
+                    timesheet=timesheet,
+                    project_id=row.project_id,
+                    activity_id=row.activity_id,
                 )
 
-        timesheet.saved_at = datetime.now()
-        await timesheet.save()
+                for date, hours in row.hours.items():
+                    await TimesheetEntry.create(
+                        date=date, hours=hours, timesheet_row=timesheet_row
+                    )
 
-    ui.notify("Timesheet saved.")
+            timesheet.saved_at = datetime.now()
+            await timesheet.save()
+
+        ui.notify("Timesheet saved.")
+
+    async def submit_timesheet(timesheet: Timesheet):
+        await save_timesheet(timesheet, rows)
+        timesheet.submitted_at = datetime.now()
+        await timesheet.save()
+        actions.refresh()
+
+    async def edit_timesheet(timesheet: Timesheet):
+        timesheet.submitted_at = None
+        await timesheet.save()
+        actions.refresh()
