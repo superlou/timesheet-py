@@ -1,5 +1,6 @@
+from datetime import datetime
+
 from nicegui import APIRouter, ui
-from nicegui.ui import notify
 from tortoise.transactions import in_transaction
 
 from timesheet_py.auth import CurrentUser
@@ -8,20 +9,27 @@ from timesheet_py.components.timesheet_editor import TimesheetEditor, TimesheetE
 from timesheet_py.models import (
     Activity,
     Project,
+    Timesheet,
     TimesheetEntry,
     TimesheetRow,
-    TimesheetSet,
-    User,
 )
 
 router = APIRouter(prefix="/timesheet")
 
 
-@router.page("/{timesheet_set_id}/me")
-async def timesheet_for_current_user(timesheet_set_id: int, user: CurrentUser):
+@router.page("/{timesheet_id}")
+async def timesheet(timesheet_id: int, user: CurrentUser):
     header(user)
 
-    timesheet_set = await TimesheetSet.get(id=timesheet_set_id)
+    timesheet = await Timesheet.get(id=timesheet_id).prefetch_related(
+        "timesheet_set",
+        "timesheet_rows",
+        "timesheet_rows__project",
+        "timesheet_rows__activity",
+        "timesheet_rows__entries",
+    )
+    timesheet_set = timesheet.timesheet_set
+
     ui.label(
         f"Timesheet for {user.name}, {timesheet_set.start} to {timesheet_set.finish}"
     )
@@ -35,9 +43,7 @@ async def timesheet_for_current_user(timesheet_set_id: int, user: CurrentUser):
                 for d in timesheet_set.dates
             },
         )
-        for r in await TimesheetRow.filter(
-            timesheet_set=timesheet_set, user=user
-        ).prefetch_related("entries", "project", "activity")
+        for r in timesheet.timesheet_rows
     ]
 
     TimesheetEditor(
@@ -47,17 +53,17 @@ async def timesheet_for_current_user(timesheet_set_id: int, user: CurrentUser):
         {a.id: a.name for a in await Activity.all()},
     )
 
-    ui.button("Save", on_click=lambda: save_timesheet(timesheet_set, user, rows))
+    ui.button("Save", on_click=lambda: save_timesheet(timesheet, rows))
+    ui.label().bind_text_from(timesheet, "saved_at", lambda x: f"Last saved on {x}")
 
 
-async def save_timesheet(timesheet_set: TimesheetSet, user: User, rows):
-    async with in_transaction() as conn:
-        await TimesheetRow.filter(timesheet_set=timesheet_set, user=user).delete()
+async def save_timesheet(timesheet: Timesheet, rows):
+    async with in_transaction() as _conn:
+        await TimesheetRow.filter(timesheet=timesheet).delete()
 
         for row in rows:
             timesheet_row = await TimesheetRow.create(
-                timesheet_set=timesheet_set,
-                user=user,
+                timesheet=timesheet,
                 project_id=row.project_id,
                 activity_id=row.activity_id,
             )
@@ -66,5 +72,8 @@ async def save_timesheet(timesheet_set: TimesheetSet, user: User, rows):
                 await TimesheetEntry.create(
                     date=date, hours=hours, timesheet_row=timesheet_row
                 )
+
+        timesheet.saved_at = datetime.now()
+        await timesheet.save()
 
     ui.notify("Timesheet saved.")

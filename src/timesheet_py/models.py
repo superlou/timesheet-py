@@ -4,11 +4,13 @@ from tortoise.fields import (
     BooleanField,
     CharField,
     DateField,
+    DatetimeField,
     FloatField,
     ForeignKeyField,
     IntField,
     ManyToManyField,
     OnDelete,
+    ReverseRelation,
 )
 from tortoise.models import Model
 
@@ -35,6 +37,7 @@ class TimesheetSet(Model):
         related_name="timesheet_sets",
         through="timesheetset_submitter",
     )
+    timesheets: ReverseRelation["Timesheet"]
 
     @property
     def dates(self) -> list[date]:
@@ -42,12 +45,21 @@ class TimesheetSet(Model):
         return [self.start + timedelta(days=i) for i in range(num_days)]
 
 
+class Timesheet(Model):
+    id = IntField(pk=True)
+    timesheet_set = ForeignKeyField("models.TimesheetSet", related_name="timesheets")
+    user = ForeignKeyField("models.User")
+    created_at = DatetimeField(auto_now_add=True)
+    saved_at = DatetimeField(null=True)
+    timesheet_rows: ReverseRelation["TimesheetRow"]
+
+
 class TimesheetRow(Model):
     id = IntField(pk=True)
-    timesheet_set = ForeignKeyField("models.TimesheetSet")
-    user = ForeignKeyField("models.User")
+    timesheet = ForeignKeyField("models.Timesheet", related_name="timesheet_rows")
     project = ForeignKeyField("models.Project")
     activity = ForeignKeyField("models.Activity")
+    entries = ReverseRelation["TimesheetEntry"]
 
 
 class TimesheetEntry(Model):

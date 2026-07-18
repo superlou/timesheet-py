@@ -26,7 +26,9 @@ app.include_router(timesheet_route.router)
 
 
 async def open_timesheet_sets() -> list[TimesheetSet]:
-    return await TimesheetSet.filter(open=True).prefetch_related("submitters")
+    return await TimesheetSet.filter(open=True).prefetch_related(
+        "timesheets", "timesheets__user"
+    )
 
 
 OpenTimesheetSets = Annotated[list[TimesheetSet], Depends(open_timesheet_sets)]
@@ -47,20 +49,20 @@ async def index(
     for timesheet_set in open_timesheet_sets:
         ui.label(f"{timesheet_set.start} through {timesheet_set.start}")
         with ui.list().props("dense separator"):
-            for user in timesheet_set.submitters:
-                if current_user == user:
+            for timesheet in timesheet_set.timesheets:
+                if current_user == timesheet.user:
                     with ui.item():
                         ui.link(
-                            user.name,
+                            timesheet.user.name,
                             str(
                                 request.url_for(
-                                    "timesheet_for_current_user",
-                                    timesheet_set_id=timesheet_set.id,
+                                    "timesheet",
+                                    timesheet_id=timesheet.id,
                                 )
                             ),
                         )
                 else:
-                    ui.item(user.name)
+                    ui.item(timesheet.user.name)
 
 
 secret = "nB1NgSC1EbOtojVIpZ2TGBhpUTs1h6R1U4jFpfJXA+c="

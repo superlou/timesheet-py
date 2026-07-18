@@ -4,7 +4,7 @@ from tortoise.transactions import in_transaction
 
 from timesheet_py.auth import CurrentUser
 from timesheet_py.components.header import header
-from timesheet_py.models import Activity, Project, TimesheetSet, User
+from timesheet_py.models import Activity, Project, Timesheet, TimesheetSet, User
 
 
 async def user_is_admin(user: CurrentUser):
@@ -50,7 +50,10 @@ async def timesheets_new(user: CurrentUser):
 
             for user, checkbox in submitters.items():
                 if checkbox.value:
-                    await timesheet_set.submitters.add(user)
+                    await Timesheet.create(
+                        timesheet_set=timesheet_set,
+                        user=user,
+                    )
 
         ui.navigate.to(timesheet_sets)
 

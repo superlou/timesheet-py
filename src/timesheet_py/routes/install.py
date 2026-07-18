@@ -7,7 +7,15 @@ from nicegui import APIRouter, app, ui
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 
-from ..models import Activity, Project, TimesheetEntry, TimesheetRow, TimesheetSet, User
+from ..models import (
+    Activity,
+    Project,
+    Timesheet,
+    TimesheetEntry,
+    TimesheetRow,
+    TimesheetSet,
+    User,
+)
 
 router = APIRouter(prefix="/install")
 
@@ -82,12 +90,15 @@ async def load_demo_data():
         open=False,
     )
     await ts.submitters.add(*await User.all())
+    for user in await User.all():
+        await Timesheet.create(timesheet_set=ts, user=user, created_on=date.today())
 
     ts = await TimesheetSet.create(
         start=date(2026, 7, 12),
         finish=date(2026, 7, 18),
     )
-    await ts.submitters.add(*await User.all())
+    for user in await User.all():
+        await Timesheet.create(timesheet_set=ts, user=user, created_on=date.today())
 
     a1 = await Activity.create(code="10", name="Engineering")
     a2 = await Activity.create(code="20", name="Training")
@@ -97,13 +108,11 @@ async def load_demo_data():
     p2 = await Project.create(code="1060.8", name="Rewind Project")
     p3 = await Project.create(code="5001.0", name="Vacation", open=False)
 
-    tr1 = await TimesheetRow.create(
-        timesheet_set=ts, user=await User.get(id=1), project=p1, activity=a1
-    )
+    ts = await Timesheet.get(user_id=1, timesheet_set__open=True)
+
+    tr1 = await TimesheetRow.create(timesheet=ts, project=p1, activity=a1)
     await TimesheetEntry.create(timesheet_row=tr1, date=date(2026, 7, 13), hours=3)
     await TimesheetEntry.create(timesheet_row=tr1, date=date(2026, 7, 14), hours=5)
 
-    tr2 = await TimesheetRow.create(
-        timesheet_set=ts, user=await User.get(id=1), project=p2, activity=a1
-    )
+    tr2 = await TimesheetRow.create(timesheet=ts, project=p2, activity=a1)
     await TimesheetEntry.create(timesheet_row=tr2, date=date(2026, 7, 15), hours=8)
