@@ -45,17 +45,17 @@ async def index(
     def timesheet_status(timesheet: Timesheet):
         if timesheet.approved:
             value = 1.0
-            label = "Approved"
+            color = "positive"
         elif timesheet.submitted:
             value = 0.5
-            label = "Submitted"
+            color = "primary"
         else:
             value = 0
-            label = ""
+            color = "warning"
 
-        with ui.linear_progress(value, show_value=False, size="1.4em").classes("w-24"):
-            with html.div().classes("absolute-full flex flex-center"):
-                ui.label(label).classes("text-white text-caption")
+        ui.circular_progress(value, color=color, show_value=False, size="1.4em").props(
+            "thickness=0.5"
+        )
 
     def timesheet_link(timesheet: Timesheet):
         if current_user == timesheet.user:
@@ -64,24 +64,42 @@ async def index(
                 str(request.url_for("timesheet", timesheet_id=timesheet.id)),
             )
         elif current_user in timesheet.user.approvers and timesheet.submitted:
-            with html.span():
+            with ui.row():
                 ui.label(timesheet.user.name)
                 ui.link(
-                    "(approve)",
+                    "approve",
                     str(request.url_for("timesheet", timesheet_id=timesheet.id)),
                 )
         else:
             ui.label(timesheet.user.name)
 
     def timesheet_status_row(timesheet: Timesheet):
-        timesheet_link(timesheet)
         timesheet_status(timesheet)
+        timesheet_link(timesheet)
 
     for timesheet_set in open_timesheet_sets:
-        ui.label(f"{timesheet_set.start} through {timesheet_set.start}")
-        with ui.grid(columns=2).classes("items-center"):
-            for timesheet in timesheet_set.timesheets:
-                timesheet_status_row(timesheet)
+        timesheets = timesheet_set.timesheets
+        submitted_fraction = sum(t.submitted for t in timesheets) / len(timesheets)
+        approved_fraction = sum(t.approved for t in timesheets) / len(timesheets)
+        header_text = f"{timesheet_set.start.strftime('%m/%d/%Y')} to {timesheet_set.finish.strftime('%m/%d/%Y')}"
+
+        with (
+            ui.expansion(value=True)
+            .props("bordered")
+            .classes("w-full items-center") as expansion
+        ):
+            with expansion.add_slot("header"):
+                with ui.row().classes("w-full items-center"):
+                    ui.label(header_text)
+                    with ui.column().classes("w-50 gap-1"):
+                        ui.linear_progress(value=submitted_fraction, show_value=False)
+                        ui.linear_progress(
+                            value=approved_fraction, show_value=False, color="green"
+                        )
+
+            with ui.grid(columns="1em auto").classes("items-center"):
+                for timesheet in timesheet_set.timesheets:
+                    timesheet_status_row(timesheet)
 
 
 secret = "nB1NgSC1EbOtojVIpZ2TGBhpUTs1h6R1U4jFpfJXA+c="
