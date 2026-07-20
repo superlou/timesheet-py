@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import shutil
 from pathlib import Path
 
 from tortoise import Tortoise
@@ -11,8 +10,8 @@ async def install():
 
     data_path = Path("./data")
     print(f"Clearing {data_path}...")
-    if data_path.exists():
-        shutil.rmtree(data_path)
+    for file in data_path.iterdir():
+        file.unlink()
 
     data_path.mkdir()
 

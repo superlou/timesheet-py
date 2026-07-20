@@ -1,4 +1,3 @@
-import shutil
 from datetime import date
 from pathlib import Path
 
@@ -26,7 +25,8 @@ async def install():
 
     async def run_setup():
         print("Deleting existing data...")
-        shutil.rmtree(data_path)
+        for file in data_path.iterdir():
+            file.unlink()
         data_path.mkdir(exist_ok=True)
 
         print("Generating schemas...")
