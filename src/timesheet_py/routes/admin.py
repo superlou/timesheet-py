@@ -75,6 +75,42 @@ async def timesheets_new(user: CurrentUser):
             }
 
 
+class ProjectRow:
+    def __init__(self, project: Project, editing: bool = False):
+        self.project = project
+        self.editing = editing
+
+    @ui.refreshable_method
+    def display(self):
+        if self.editing:
+            code_input = ui.input(value=self.project.code).props("dense")
+            name_input = ui.input(value=self.project.name).props("dense")
+            open_input = ui.checkbox(value=self.project.open).props("dense")
+            ui.button(
+                icon="save",
+                on_click=lambda: self.save(
+                    code_input.value, name_input.value, open_input.value
+                ),
+            )
+        else:
+            ui.label(self.project.code)
+            ui.label(self.project.name)
+            ui.label(str(self.project.open))
+            ui.button(icon="edit", on_click=self.edit)
+
+    def edit(self):
+        self.editing = True
+        self.display.refresh()
+
+    async def save(self, code: str, name: str, open: bool):
+        self.project.code = code
+        self.project.name = name
+        self.project.open = open
+        await self.project.save()
+        self.editing = False
+        self.display.refresh()
+
+
 @router.page("/projects")
 async def projects(user: CurrentUser):
     header(user)
@@ -83,29 +119,31 @@ async def projects(user: CurrentUser):
     @ui.refreshable
     async def projects_list():
         projects = await Project.all()
-        with ui.grid(columns=3):
+        with ui.grid(columns=4):
             ui.label("Code")
             ui.label("Name")
             ui.label("Open")
+            ui.label()
 
             for project in projects:
-                ui.label(project.code)
-                ui.label(project.name)
-                ui.label(str(project.open))
+                ProjectRow(project).display()
 
-    async def create_project():
-        await Project.create(code=new_project_code.value, name=new_project_name.value)
-        new_project_code.value = ""
-        new_project_name.value = ""
-        projects_list.refresh()
+            new_project_code = ui.input("Code").props("dense")
+            new_project_name = ui.input("Name").props("dense")
+            new_project_open = ui.checkbox().props("dense")
+            ui.button(icon="add", on_click=lambda: create_project())
+
+            async def create_project():
+                await Project.create(
+                    code=new_project_code.value,
+                    name=new_project_name.value,
+                    open=new_project_open.value,
+                )
+                new_project_code.value = ""
+                new_project_name.value = ""
+                projects_list.refresh()
 
     await projects_list()
-
-    with ui.row().classes("items-center"):
-        ui.label("New project")
-        new_project_code = ui.input("Code")
-        new_project_name = ui.input("Name")
-        ui.button("Create", on_click=create_project)
 
 
 @router.page("/activities")
