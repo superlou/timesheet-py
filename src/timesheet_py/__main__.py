@@ -7,12 +7,11 @@ from tortoise.contrib.fastapi import register_tortoise
 from timesheet_py.auth import CurrentUser
 from timesheet_py.models import Timesheet, TimesheetSet, User
 
-from . import auth  # noqa: F401
+from . import (
+    auth,  # noqa: F401
+    routes,
+)
 from .components.header import header
-from .routes import admin as admin_route
-from .routes import install as install_route
-from .routes import timesheet as timesheet_route
-from .routes import user as user_route
 
 register_tortoise(
     app,
@@ -20,9 +19,9 @@ register_tortoise(
     modules={"models": ["timesheet_py.models"]},
 )
 
-app.include_router(install_route.router)
-app.include_router(admin_route.router)
-app.include_router(timesheet_route.router)
+app.include_router(routes.install.router)
+app.include_router(routes.admin.router)
+app.include_router(routes.timesheet.router)
 
 
 async def open_timesheet_sets() -> list[TimesheetSet]:
