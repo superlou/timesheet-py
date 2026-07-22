@@ -21,15 +21,17 @@ async def users(user: CurrentUser):
     async def user_table():
         users = await User.all().prefetch_related("approvers")
 
-        with ui.grid(columns=4).classes("items-center"):
+        with ui.grid(columns=5).classes("items-center"):
             ui.label("Name")
             ui.label("Email")
+            ui.label("Code")
             ui.label("Admin")
             ui.label("Approver")
 
             for user in users:
                 ui.label(user.name)
                 ui.label(user.email)
+                ui.label(user.code)
                 ui.checkbox(
                     value=user.admin,
                     on_change=lambda evt, user=user: update_user_admin(user, evt.value),

@@ -14,6 +14,6 @@ async def user(user: CurrentUser):
 
     name = ui.input("Name").bind_value(user, "name")
     email = ui.input("Email").bind_value(user, "email")
-    employee_id = ui.input("Employee ID").bind_value(user, "employee_id")
+    code = ui.input("Employee ID").bind_value(user, "code")
     ui.label(f"Admin: {user.admin}")
     ui.button("Save", on_click=update_user)

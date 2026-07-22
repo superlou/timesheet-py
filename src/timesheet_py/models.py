@@ -19,7 +19,7 @@ class User(Model):
     id = IntField(pk=True)
     email = CharField(max_length=255, unique=True)
     name = CharField(max_length=255, default="")
-    employee_id = CharField(max_length=255, default="")
+    code = CharField(max_length=255, default="")
     password_hash = CharField(max_length=255)
     admin = BooleanField(default=False)
     approvers = ManyToManyField(
