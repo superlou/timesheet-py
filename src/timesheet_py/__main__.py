@@ -8,6 +8,7 @@ from timesheet_py.auth import CurrentUser
 from timesheet_py.models import Timesheet, TimesheetSet, User
 
 from . import (
+    api,
     auth,  # noqa: F401
     routes,
 )
@@ -22,6 +23,7 @@ register_tortoise(
 app.include_router(routes.install.router)
 app.include_router(routes.admin.router)
 app.include_router(routes.timesheet.router)
+app.include_router(api.router)
 
 
 async def open_timesheet_sets() -> list[TimesheetSet]:
