@@ -13,6 +13,7 @@ unauthenticated_page_routes = {
     "/install",
     "/install/",
     "/users/new",
+    "/openapi.json",
 }
 
 
@@ -23,6 +24,7 @@ class AuthMiddleWare(BaseHTTPMiddleware):
         if (
             app.storage.user.get("authenticated")
             or path in unauthenticated_page_routes
+            or path.startswith("/api")
             or path.startswith("/_nicegui")
         ):
             return await call_next(request)

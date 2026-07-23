@@ -13,6 +13,10 @@ async def users(user: CurrentUser):
         user.admin = value
         await user.save()
 
+    async def update_user_api_access(user, value):
+        user.api_access = value
+        await user.save()
+
     async def update_user_approvers(user, approvers):
         await user.approvers.clear()
         await user.approvers.add(*approvers)
@@ -21,11 +25,12 @@ async def users(user: CurrentUser):
     async def user_table():
         users = await User.all().prefetch_related("approvers")
 
-        with ui.grid(columns=5).classes("items-center"):
+        with ui.grid(columns=6).classes("items-center"):
             ui.label("Name")
             ui.label("Email")
             ui.label("Code")
             ui.label("Admin")
+            ui.label("API Access")
             ui.label("Approver")
 
             for user in users:
@@ -35,6 +40,12 @@ async def users(user: CurrentUser):
                 ui.checkbox(
                     value=user.admin,
                     on_change=lambda evt, user=user: update_user_admin(user, evt.value),
+                )
+                ui.checkbox(
+                    value=user.api_access,
+                    on_change=lambda evt, user=user: update_user_api_access(
+                        user, evt.value
+                    ),
                 )
                 ui.select(
                     {user: user.name for user in users},

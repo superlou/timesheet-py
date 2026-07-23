@@ -22,9 +22,16 @@ class User(Model):
     code = CharField(max_length=255, default="")
     password_hash = CharField(max_length=255)
     admin = BooleanField(default=False)
+    api_access = BooleanField(db_default=False)
     approvers = ManyToManyField(
         "models.User", related_name="approvees", through="user_approver"
     )
+
+
+class APIKey(Model):
+    id = IntField(pk=True)
+    user = ForeignKeyField("models.User", related_name="api_keys")
+    key = CharField(max_length=255)
 
 
 class TimesheetSet(Model):

@@ -104,4 +104,4 @@ async def index(
 
 
 secret = "nB1NgSC1EbOtojVIpZ2TGBhpUTs1h6R1U4jFpfJXA+c="
-ui.run(storage_secret=secret)
+ui.run(storage_secret=secret, fastapi_docs=True)
