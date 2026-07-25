@@ -1,8 +1,6 @@
 from nicegui import ui
 
 from timesheet_py.auth import CurrentUser
-from timesheet_py.components.admin_menu import admin_menu
-from timesheet_py.components.header import header
 from timesheet_py.models import Activity
 
 
@@ -55,8 +53,6 @@ class ActivityRow:
 
 
 async def activities(user: CurrentUser):
-    header(user)
-
     @ui.refreshable
     async def activities_list():
         activities = await Activity.all()
@@ -88,8 +84,4 @@ async def activities(user: CurrentUser):
             new_activity_name.value = ""
             activities_list.refresh()
 
-    with ui.row():
-        with ui.column():
-            admin_menu()
-        with ui.column():
-            await activities_list()
+    await activities_list()

@@ -7,8 +7,7 @@ from timesheet_py.components.header import header
 from timesheet_py.models import APIKey, User
 
 
-@ui.page("/user")
-async def user(user: CurrentUser):
+async def edit_user_profile(user: CurrentUser):
     async def update_user():
         await user.save()
 
@@ -45,8 +44,6 @@ async def user(user: CurrentUser):
 
             with ui.item():
                 ui.button(icon="add", on_click=create_key)
-
-    header(user)
 
     ui.input("Name").bind_value(user, "name")
     ui.input("Email").bind_value(user, "email")

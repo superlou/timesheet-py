@@ -1,19 +1,36 @@
-from nicegui import ui
+from nicegui import context, ui
+
+MENU_LINKS = {
+    "Timesheet Sets": "/admin/timesheet_sets",
+    "Projects": "/admin/projects",
+    "Activities": "/admin/activities",
+    "Users": "/admin/users",
+}
 
 
-def admin_menu():
-    with ui.list().props("bordered separator"):
-        ui.item_label("Admin").props("header").classes("text-bold")
-        ui.separator()
+class AdminMenu(ui.element):
+    def __init__(self):
+        ui.context.client.sub_pages_router.on_path_changed(self.display.refresh)
 
-        with ui.item().classes("items-center"):
-            ui.link("Timesheet Sets", "/admin/timesheet_sets")
+    def __del__(self):
+        print("DESTROYED")
 
-        with ui.item().classes("items-center"):
-            ui.link("Projects", "/admin/projects")
+    @ui.refreshable_method
+    def display(self, path: str | None = None):
+        if path is None:
+            path = ui.context.client.sub_pages_router.current_path
 
-        with ui.item().classes("items-center"):
-            ui.link("Activities", "/admin/activities")
+        with ui.list().props("bordered separator"):
+            ui.item_label("Admin").props("header").classes("text-bold")
+            ui.separator()
 
-        with ui.item().classes("items-center"):
-            ui.link("Users", "/admin/users")
+            for label, target in MENU_LINKS.items():
+                with ui.item(
+                    on_click=lambda target=target: ui.navigate.to(target)
+                ).classes("items-center") as item:
+                    ui.label(label).props("active")
+
+                    if path.startswith(target):
+                        item.props("active")
+
+        return self

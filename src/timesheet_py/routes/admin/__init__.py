@@ -1,33 +1,39 @@
-from fastapi import Depends, HTTPException, status
-from nicegui import APIRouter, ui
-from tortoise.transactions import in_transaction
+from fastapi import HTTPException, status
+from nicegui import ui
 
 from timesheet_py.auth import CurrentUser
-from timesheet_py.components.admin_menu import admin_menu
-from timesheet_py.components.header import header
-from timesheet_py.models import Timesheet, TimesheetSet, User
+from timesheet_py.components.admin_menu import AdminMenu
 
 from .activities import activities
 from .projects import projects
-from .timesheet_sets import timesheet_sets, timesheet_sets_edit, timesheets_sets_new
+from .timesheet_sets import timesheet_sets, timesheet_sets_edit, timesheet_sets_new
 from .users import users
 
 
-async def user_is_admin(user: CurrentUser):
+async def admin(user: CurrentUser):
     if not user.admin:
+        ui.label("Forbidden")
         raise HTTPException(status.HTTP_403_FORBIDDEN)
 
+    with ui.row().classes("w-full"):
+        with ui.column().classes("col-2"):
+            AdminMenu().display()
+        with ui.column().classes("col-9"):
+            ui.sub_pages(
+                {
+                    "/": admin_index,
+                    "/timesheet_sets": lambda: timesheet_sets(user),
+                    "/timesheet_sets/new": lambda: timesheet_sets_new(user),
+                    "/timesheet_sets/{timesheet_set_id}": lambda timesheet_set_id: timesheet_sets_edit(
+                        timesheet_set_id, user
+                    ),
+                    "/users": lambda: users(user),
+                    "/projects": projects,
+                    "/activities": lambda: activities(user),
+                }
+            ).classes("w-full")
 
-router = APIRouter(prefix="/admin", dependencies=[Depends(user_is_admin)])
-router.page("/projects")(projects)
-router.page("/activities")(activities)
-router.page("/users")(users)
-router.page("/timesheet_sets")(timesheet_sets)
-router.page("/timesheet_sets/new")(timesheets_sets_new)
-router.page("/timesheet_sets/{timesheet_set_id}")(timesheet_sets_edit)
 
-
-@router.page("/")
-async def admin(user: CurrentUser):
-    header(user)
-    admin_menu()
+async def admin_index():
+    ui.label("Admin")
+    ui.label("These settings configure the Timesheet Entry application.")
