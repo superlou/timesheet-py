@@ -39,11 +39,6 @@ class TimesheetSet(Model):
     start = DateField()
     finish = DateField()
     open = BooleanField(default=True)
-    submitters = ManyToManyField(
-        "models.User",
-        related_name="timesheet_sets",
-        through="timesheetset_submitter",
-    )
     timesheets: ReverseRelation["Timesheet"]
 
     @property
@@ -54,7 +49,11 @@ class TimesheetSet(Model):
 
 class Timesheet(Model):
     id = IntField(pk=True)
-    timesheet_set = ForeignKeyField("models.TimesheetSet", related_name="timesheets")
+    timesheet_set = ForeignKeyField(
+        "models.TimesheetSet",
+        related_name="timesheets",
+        on_delete=OnDelete.CASCADE,
+    )
     user = ForeignKeyField("models.User")
     created_at = DatetimeField(auto_now_add=True)
     saved_at = DatetimeField(null=True)
@@ -81,7 +80,11 @@ class Timesheet(Model):
 
 class TimesheetRow(Model):
     id = IntField(pk=True)
-    timesheet = ForeignKeyField("models.Timesheet", related_name="timesheet_rows")
+    timesheet = ForeignKeyField(
+        "models.Timesheet",
+        related_name="timesheet_rows",
+        on_delete=OnDelete.CASCADE,
+    )
     project = ForeignKeyField("models.Project")
     activity = ForeignKeyField("models.Activity")
     entries = ReverseRelation["TimesheetEntry"]
