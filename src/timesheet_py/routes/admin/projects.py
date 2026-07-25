@@ -1,8 +1,5 @@
 from nicegui import ui
 
-from timesheet_py.auth import CurrentUser
-from timesheet_py.components.admin_menu import admin_menu
-from timesheet_py.components.header import header
 from timesheet_py.models import Project
 
 
@@ -53,9 +50,7 @@ class ProjectRow:
         self.display.refresh()
 
 
-async def projects(user: CurrentUser):
-    header(user)
-
+async def projects():
     @ui.refreshable
     async def projects_list():
         projects = await Project.all()
@@ -90,8 +85,4 @@ async def projects(user: CurrentUser):
                 new_project_name.value = ""
                 projects_list.refresh()
 
-    with ui.row():
-        with ui.column():
-            admin_menu()
-        with ui.column():
-            await projects_list()
+    await projects_list()

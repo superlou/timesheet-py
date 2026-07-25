@@ -15,17 +15,12 @@ from timesheet_py.models import (
     TimesheetRow,
 )
 
-router = APIRouter(prefix="/timesheet")
-
 
 def can_view_timesheet(timesheet: Timesheet, current_user: CurrentUser) -> bool:
     return timesheet.user == current_user or current_user in timesheet.user.approvers
 
 
-@router.page("/{timesheet_id}")
 async def timesheet(timesheet_id: int, current_user: CurrentUser):
-    header(current_user)
-
     timesheet = await Timesheet.get(id=timesheet_id).prefetch_related(
         "timesheet_set",
         "timesheet_rows",

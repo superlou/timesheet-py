@@ -1,10 +1,7 @@
 from nicegui import ui
 from tortoise.transactions import in_transaction
 
-from timesheet_py.api import router
 from timesheet_py.auth import CurrentUser
-from timesheet_py.components.admin_menu import admin_menu
-from timesheet_py.components.header import header
 from timesheet_py.models import Timesheet, TimesheetSet, User
 
 
@@ -35,31 +32,24 @@ async def timesheet_sets(user: CurrentUser):
     async def filter_timesheet_sets():
         pass
 
-    header(user)
-    with ui.row().classes("w-full"):
-        with ui.column().classes("col-2"):
-            admin_menu()
-        with ui.column().classes("col-9"):
+    ui.label("Timesheet Sets")
+    ui.link("New", "/admin/timesheet_sets/new")
+
+    with ui.list().props("bordered separator").classes("w-full"):
+        with ui.item_label().props("header").classes("text-bold"):
             ui.label("Timesheet Sets")
-            ui.link("New", timesheets_sets_new)
 
-            with ui.list().props("bordered separator").classes("w-full"):
-                with ui.item_label().props("header").classes("text-bold"):
-                    ui.label("Timesheet Sets")
+        ui.separator()
 
-                ui.separator()
+        filters = {}
+        timesheet_sets = (
+            await TimesheetSet.filter(**filters).all().prefetch_related("timesheets")
+        )
 
-                filters = {}
-                timesheet_sets = (
-                    await TimesheetSet.filter(**filters)
-                    .all()
-                    .prefetch_related("timesheets")
-                )
-
-                await timesheets_list_items(timesheet_sets)
+        await timesheets_list_items(timesheet_sets)
 
 
-async def timesheets_sets_new(user: CurrentUser):
+async def timesheet_sets_new(user: CurrentUser):
     async def create_timesheet_set():
         start, finish = date_range.value.split(" - ")
         timesheet_set = TimesheetSet(start=start, finish=finish, open=True)
@@ -74,34 +64,28 @@ async def timesheets_sets_new(user: CurrentUser):
                         user=user,
                     )
 
-        ui.navigate.to(timesheet_sets)
+        ui.navigate.to("/admin/timesheet_sets")
 
-    header(user)
+    ui.label("New Timesheet")
 
-    with ui.row().classes("w-full"):
-        with ui.column().classes("col-2"):
-            admin_menu()
-        with ui.column().classes("col-9"):
-            ui.label("New Timesheet")
+    with ui.row():
+        with ui.column():
+            ui.label("Dates")
+            date_range = ui.date_input("Range", range_input=True)
+            ui.button("Create timesheet", on_click=create_timesheet_set)
 
-            with ui.row():
-                with ui.column():
-                    ui.label("Dates")
-                    date_range = ui.date_input("Range", range_input=True)
-                    ui.button("Create timesheet", on_click=create_timesheet_set)
-
-                with ui.column():
-                    ui.label("Submitters")
-                    submitters = {
-                        user: ui.checkbox(f"{user.name} ({user.email})", value=True)
-                        for user in await User.all()
-                    }
+        with ui.column():
+            ui.label("Submitters")
+            submitters = {
+                user: ui.checkbox(f"{user.name} ({user.email})", value=True)
+                for user in await User.all()
+            }
 
 
 async def timesheet_sets_edit(timesheet_set_id: int, user: CurrentUser):
     async def delete():
         await timesheet_set.delete()
-        ui.navigate.to(timesheet_sets)
+        ui.navigate.to("/admin/timesheet_sets")
 
     async def save():
         start, finish = date_range.value.split(" - ")
@@ -136,49 +120,43 @@ async def timesheet_sets_edit(timesheet_set_id: int, user: CurrentUser):
                 ui.button("Cancel", on_click=delete_dialog.close)
                 ui.button("Delete", on_click=delete)
 
-    header(user)
-
     timesheet_set = await TimesheetSet.get(id=timesheet_set_id).prefetch_related(
         "timesheets", "timesheets__user"
     )
 
-    with ui.row().classes("w-full"):
-        with ui.column().classes("col-2"):
-            admin_menu()
-        with ui.column().classes("col-9"):
-            with ui.row():
-                with ui.column():
-                    with ui.row().classes("items-center").classes("w-full"):
-                        ui.label("Timesheet Set")
-                        ui.label().classes("col-grow")
-                        ui.button(
-                            icon="delete", on_click=lambda: delete_dialog.open()
-                        ).props("outline")
+    with ui.row():
+        with ui.column():
+            with ui.row().classes("items-center").classes("w-full"):
+                ui.label("Timesheet Set")
+                ui.label().classes("col-grow")
+                ui.button(icon="delete", on_click=lambda: delete_dialog.open()).props(
+                    "outline"
+                )
 
-                    date_range = ui.date_input(
-                        "Range",
-                        range_input=True,
-                        value=f"{timesheet_set.start} - {timesheet_set.finish}",
-                    )
-                    is_open = ui.checkbox("Open", value=timesheet_set.open)
-                    ui.button("Save", on_click=save)
+            date_range = ui.date_input(
+                "Range",
+                range_input=True,
+                value=f"{timesheet_set.start} - {timesheet_set.finish}",
+            )
+            is_open = ui.checkbox("Open", value=timesheet_set.open)
+            ui.button("Save", on_click=save)
 
-                    timesheet_set_users = [
-                        timesheet.user for timesheet in timesheet_set.timesheets
-                    ]
-                    users = await User.all()
-                    user_selection = {
-                        str(user.id): user in timesheet_set_users for user in users
-                    }
+            timesheet_set_users = [
+                timesheet.user for timesheet in timesheet_set.timesheets
+            ]
+            users = await User.all()
+            user_selection = {
+                str(user.id): user in timesheet_set_users for user in users
+            }
 
-                with ui.column():
-                    with ui.list().props("bordered separator").classes("w-full"):
-                        ui.item_label("Timesheets").props("header").classes("text-bold")
-                        ui.separator()
+        with ui.column():
+            with ui.list().props("bordered separator").classes("w-full"):
+                ui.item_label("Timesheets").props("header").classes("text-bold")
+                ui.separator()
 
-                        for user in users:
-                            with ui.item():
-                                with ui.item_section():
-                                    ui.checkbox(user.name).bind_value(
-                                        user_selection, str(user.id)
-                                    )
+                for user in users:
+                    with ui.item():
+                        with ui.item_section():
+                            ui.checkbox(user.name).bind_value(
+                                user_selection, str(user.id)
+                            )

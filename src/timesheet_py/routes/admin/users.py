@@ -1,14 +1,10 @@
 from nicegui import ui
 
 from timesheet_py.auth import CurrentUser
-from timesheet_py.components.admin_menu import admin_menu
-from timesheet_py.components.header import header
 from timesheet_py.models import User
 
 
 async def users(user: CurrentUser):
-    header(user)
-
     async def update_user_admin(user, value):
         user.admin = value
         await user.save()
@@ -66,9 +62,5 @@ async def users(user: CurrentUser):
                             ),
                         )
 
-    with ui.row().classes("w-full"):
-        with ui.column().classes("col-2"):
-            admin_menu()
-        with ui.column().classes("col-8"):
-            ui.label("Users")
-            await user_table()
+    ui.label("Users")
+    await user_table()

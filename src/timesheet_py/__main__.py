@@ -1,11 +1,11 @@
-from typing import Annotated
-
-from fastapi import Depends, Request
-from nicegui import app, html, ui
+from fastapi import Request
+from nicegui import app, ui
 from tortoise.contrib.fastapi import register_tortoise
 
 from timesheet_py.auth import CurrentUser
 from timesheet_py.models import Timesheet, TimesheetSet, User
+from timesheet_py.routes.admin import admin
+from timesheet_py.routes.user import edit_user_profile
 
 from . import (
     api,
@@ -21,8 +21,6 @@ register_tortoise(
 )
 
 app.include_router(routes.install.router)
-app.include_router(routes.admin.router)
-app.include_router(routes.timesheet.router)
 app.include_router(api.router)
 
 
@@ -32,16 +30,10 @@ async def open_timesheet_sets() -> list[TimesheetSet]:
     )
 
 
-OpenTimesheetSets = Annotated[list[TimesheetSet], Depends(open_timesheet_sets)]
-
-
-@ui.page("/")
-async def index(
-    current_user: CurrentUser,
-    open_timesheet_sets: OpenTimesheetSets,
-    request: Request,
-):
-    header(current_user)
+async def open_timesheets_list(current_user: User, request: Request):
+    open_timesheet_sets = await TimesheetSet.filter(open=True).prefetch_related(
+        "timesheets", "timesheets__user", "timesheets__user__approvers"
+    )
 
     def timesheet_status(timesheet: Timesheet):
         if timesheet.approved:
@@ -62,15 +54,12 @@ async def index(
         if current_user == timesheet.user:
             ui.link(
                 timesheet.user.name,
-                str(request.url_for("timesheet", timesheet_id=timesheet.id)),
+                f"/timesheet/{timesheet.id}",
             )
         elif current_user in timesheet.user.approvers and timesheet.submitted:
             with ui.row():
                 ui.label(timesheet.user.name)
-                ui.link(
-                    "approve",
-                    str(request.url_for("timesheet", timesheet_id=timesheet.id)),
-                )
+                ui.link("approve", f"/timesheet/{timesheet.id}")
         else:
             ui.label(timesheet.user.name)
 
@@ -101,6 +90,30 @@ async def index(
             with ui.grid(columns="1em auto").classes("items-center"):
                 for timesheet in timesheet_set.timesheets:
                     timesheet_status_row(timesheet)
+
+
+@ui.page("/")
+@ui.page("/timesheet/{timesheet_id}")
+@ui.page("/user")
+@ui.page("/admin")
+@ui.page("/admin/{_:path}")
+async def index(
+    current_user: CurrentUser,
+    request: Request,
+):
+    header(current_user)
+
+    ui.sub_pages(
+        {
+            "/": lambda: open_timesheets_list(current_user, request),
+            "/timesheet/{timesheet_id}": lambda timesheet_id: routes.timesheet.timesheet(
+                timesheet_id,
+                current_user,
+            ),
+            "/user": lambda: edit_user_profile(current_user),
+            "/admin": lambda: admin(current_user),
+        }
+    ).classes("w-full")
 
 
 secret = "nB1NgSC1EbOtojVIpZ2TGBhpUTs1h6R1U4jFpfJXA+c="
