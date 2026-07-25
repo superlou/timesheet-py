@@ -3,6 +3,7 @@ from nicegui import APIRouter, ui
 from tortoise.transactions import in_transaction
 
 from timesheet_py.auth import CurrentUser
+from timesheet_py.components.admin_menu import admin_menu
 from timesheet_py.components.header import header
 from timesheet_py.models import Timesheet, TimesheetSet, User
 
@@ -29,8 +30,4 @@ router.page("/timesheet_sets/{timesheet_set_id}")(timesheet_sets_edit)
 @router.page("/")
 async def admin(user: CurrentUser):
     header(user)
-    ui.label("Admin")
-    ui.link("Timesheet Sets", timesheet_sets)
-    ui.link("Projects", projects)
-    ui.link("Activities", activities)
-    ui.link("Users", users)
+    admin_menu()

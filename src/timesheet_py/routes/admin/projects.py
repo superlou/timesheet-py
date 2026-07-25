@@ -1,6 +1,7 @@
 from nicegui import ui
 
 from timesheet_py.auth import CurrentUser
+from timesheet_py.components.admin_menu import admin_menu
 from timesheet_py.components.header import header
 from timesheet_py.models import Project
 
@@ -89,4 +90,8 @@ async def projects(user: CurrentUser):
                 new_project_name.value = ""
                 projects_list.refresh()
 
-    await projects_list()
+    with ui.row():
+        with ui.column():
+            admin_menu()
+        with ui.column():
+            await projects_list()
