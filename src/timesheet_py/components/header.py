@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import context, ui
 
 from timesheet_py.models import User
 
@@ -6,20 +6,40 @@ from .. import auth
 
 
 def header(user: User):
-    with ui.header().classes("items-center justify-between"):
-        with ui.link(target="/").classes("text-white"):
-            ui.icon("home")
+    with ui.header().classes("text-white").style("background: #14497e; padding: 0px;"):
+        with ui.element("q-toolbar").classes("q-py-sm q-px-md"):
+            with ui.link(target="/").classes("text-white"):
+                ui.button(icon="sym_o_calendar_clock", text="Timesheet Entry").props(
+                    "dense flat color=white no-caps"
+                ).classes("items-center")
 
-        with ui.row().classes("items-center"):
-            with ui.link(target="/user"):
-                with ui.row().classes("text-white items-center"):
-                    ui.icon("person")
-                    ui.label(user.email)
+            ui.space()
 
-            if user.admin:
-                with ui.link(target="/admin"):
-                    with ui.row().classes("text-white items-center"):
-                        ui.icon("settings")
-                        ui.label("Admin")
+            with ui.button(icon="person").props("round dense flat color=white no-caps"):
+                with ui.menu().props():
+                    with (
+                        ui.menu_item(auto_close=False)
+                        .classes("items-center text-caption")
+                        .style("pointer-events: none; cursor: default")
+                    ):
+                        ui.html(f"Signed in as <b>{user.name}</b>").classes(
+                            "text-no-wrap"
+                        )
 
-            ui.button(on_click=auth.logout, icon="logout")
+                    ui.separator()
+
+                    with ui.menu_item(on_click=lambda: ui.navigate.to("/user")):
+                        with ui.row().classes("items-center"):
+                            ui.icon("person")
+                            ui.label("Profile")
+
+                    if user.admin:
+                        with ui.menu_item(on_click=lambda: ui.navigate.to("/admin")):
+                            with ui.row().classes("items-center"):
+                                ui.icon("settings")
+                                ui.label("Admin")
+
+                    with ui.menu_item(on_click=auth.logout):
+                        with ui.row().classes("items-center"):
+                            ui.icon("logout")
+                            ui.label("Sign out")
