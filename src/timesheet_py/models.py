@@ -26,6 +26,7 @@ class User(Model):
     approvers = ManyToManyField(
         "models.User", related_name="approvees", through="user_approver"
     )
+    timesheets = ReverseRelation["Timesheet"]
 
 
 class APIKey(Model):
@@ -54,7 +55,7 @@ class Timesheet(Model):
         related_name="timesheets",
         on_delete=OnDelete.CASCADE,
     )
-    user = ForeignKeyField("models.User")
+    user = ForeignKeyField("models.User", related_name="timesheets")
     created_at = DatetimeField(auto_now_add=True)
     saved_at = DatetimeField(null=True)
     submitted_at = DatetimeField(null=True)

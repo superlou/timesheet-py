@@ -13,11 +13,70 @@ from timesheet_py.models import (
     Timesheet,
     TimesheetEntry,
     TimesheetRow,
+    User,
 )
 
 
 def can_view_timesheet(timesheet: Timesheet, current_user: CurrentUser) -> bool:
     return timesheet.user == current_user or current_user in timesheet.user.approvers
+
+
+async def find_previous_timesheet(user: User, timesheet: Timesheet) -> Timesheet | None:
+    await user.fetch_related("timesheets", "timesheets__timesheet_rows")
+    return (
+        await user.timesheets.filter(
+            timesheet_set__finish__lt=timesheet.timesheet_set.finish
+        )
+        .order_by("-timesheet_set__finish")
+        .first()
+    )
+
+
+async def build_rows(timesheet: Timesheet) -> list[TimesheetEditorRow]:
+    timesheet_set = timesheet.timesheet_set
+    user = timesheet.user
+
+    rows = [
+        TimesheetEditorRow(
+            project_id=r.project.id,
+            activity_id=r.activity.id,
+            hours={
+                d: sum(entry.hours for entry in r.entries if entry.date == d)
+                for d in timesheet_set.dates
+            },
+        )
+        for r in timesheet.timesheet_rows
+    ]
+
+    if len(rows) == 0:
+        previous_timesheet = await find_previous_timesheet(user, timesheet)
+        await previous_timesheet.fetch_related(
+            "timesheet_set",
+            "user",
+            "timesheet_rows",
+            "timesheet_rows__project",
+            "timesheet_rows__activity",
+        )
+
+        if previous_timesheet:
+            rows = [
+                TimesheetEditorRow(
+                    project_id=r.project.id,
+                    activity_id=r.activity.id,
+                    hours={d: 0 for d in timesheet_set.dates},
+                )
+                for r in previous_timesheet.timesheet_rows
+            ]
+        else:
+            rows = [
+                TimesheetEditorRow(
+                    project_id=0,
+                    activity_id=0,
+                    hours={d: 0 for d in timesheet_set.dates},
+                )
+            ]
+
+    return rows
 
 
 async def timesheet(timesheet_id: int, current_user: CurrentUser):
@@ -61,17 +120,7 @@ async def timesheet(timesheet_id: int, current_user: CurrentUser):
 
     actions()
 
-    rows = [
-        TimesheetEditorRow(
-            project_id=r.project.id,
-            activity_id=r.activity.id,
-            hours={
-                d: sum(entry.hours for entry in r.entries if entry.date == d)
-                for d in timesheet_set.dates
-            },
-        )
-        for r in timesheet.timesheet_rows
-    ]
+    rows = await build_rows(timesheet)
 
     TimesheetEditor(
         timesheet_set.dates,
