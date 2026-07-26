@@ -24,7 +24,7 @@ async def timesheet_sets(user: CurrentUser):
                 with ui.item_section().classes("col-shrink"):
                     ui.button(
                         icon="edit",
-                        on_click=lambda: ui.navigate.to(
+                        on_click=lambda timesheet_set=timesheet_set: ui.navigate.to(
                             f"/admin/timesheet_sets/{timesheet_set.id}"
                         ),
                     ).props("flat")
