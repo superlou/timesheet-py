@@ -29,17 +29,17 @@ def header(user: User):
                     ui.separator()
 
                     with ui.menu_item(on_click=lambda: ui.navigate.to("/user")):
-                        with ui.row().classes("items-center"):
+                        with ui.row().classes("items-center no-wrap"):
                             ui.icon("person")
                             ui.label("Profile")
 
                     if user.admin:
                         with ui.menu_item(on_click=lambda: ui.navigate.to("/admin")):
-                            with ui.row().classes("items-center"):
+                            with ui.row().classes("items-center no-wrap"):
                                 ui.icon("settings")
                                 ui.label("Admin")
 
                     with ui.menu_item(on_click=auth.logout):
-                        with ui.row().classes("items-center"):
+                        with ui.row().classes("items-center no-wrap"):
                             ui.icon("logout")
-                            ui.label("Sign out")
+                            ui.label("Sign out").classes("text-no-wrap")

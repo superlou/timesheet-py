@@ -48,6 +48,7 @@ async def get_entries() -> JSONResponse:
             "activity_name": entry.timesheet_row.activity.name,
             "activity_code": entry.timesheet_row.activity.code,
             "user_name": entry.timesheet_row.timesheet.user.name,
+            "user_last_name": entry.timesheet_row.timesheet.user.last_name,
             "user_email": entry.timesheet_row.timesheet.user.email,
             "user_code": entry.timesheet_row.timesheet.user.code,
             "submitted": entry.timesheet_row.timesheet.submitted,

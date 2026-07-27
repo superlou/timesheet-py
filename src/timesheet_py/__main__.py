@@ -53,15 +53,15 @@ async def open_timesheets_list(current_user: User, request: Request):
     def timesheet_link(timesheet: Timesheet):
         if current_user == timesheet.user:
             ui.link(
-                timesheet.user.name,
+                timesheet.user.full_name,
                 f"/timesheet/{timesheet.id}",
             )
         elif current_user in timesheet.user.approvers and timesheet.submitted:
             with ui.row():
-                ui.label(timesheet.user.name)
+                ui.label(timesheet.user.full_name)
                 ui.link("approve", f"/timesheet/{timesheet.id}")
         else:
-            ui.label(timesheet.user.name)
+            ui.label(timesheet.user.full_name)
 
     def timesheet_status_row(timesheet: Timesheet):
         timesheet_status(timesheet)

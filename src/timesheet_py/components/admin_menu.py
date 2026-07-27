@@ -1,6 +1,7 @@
-from nicegui import context, ui
+from nicegui import ui
 
 MENU_LINKS = {
+    "Settings": "/admin/settings",
     "Timesheet Sets": "/admin/timesheet_sets",
     "Projects": "/admin/projects",
     "Activities": "/admin/activities",

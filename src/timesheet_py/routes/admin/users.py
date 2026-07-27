@@ -35,7 +35,7 @@ async def users(user: CurrentUser):
             for user in users:
                 with ui.item():
                     with ui.item_section():
-                        ui.label(user.name)
+                        ui.label(user.full_name)
                         ui.label(user.email).classes("text-caption")
                         ui.label(user.code).classes("text-caption")
                     with ui.item_section():

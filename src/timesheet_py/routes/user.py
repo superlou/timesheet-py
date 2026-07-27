@@ -4,7 +4,7 @@ from nicegui import app, ui
 
 from timesheet_py.auth import CurrentUser
 from timesheet_py.components.header import header
-from timesheet_py.models import APIKey, User
+from timesheet_py.models import APIKey, Setting, User
 
 
 async def edit_user_profile(user: CurrentUser):
@@ -45,7 +45,12 @@ async def edit_user_profile(user: CurrentUser):
             with ui.item():
                 ui.button(icon="add", on_click=create_key)
 
-    ui.input("Name").bind_value(user, "name")
+    if (await Setting.get(key="split_name")).value == "1":
+        with ui.row():
+            ui.input("First name").bind_value(user, "name")
+            ui.input("Last name").bind_value(user, "last_name")
+    else:
+        ui.input("Name").bind_value(user, "name")
     ui.input("Email").bind_value(user, "email")
     ui.input("Employee ID").bind_value(user, "code")
     ui.label(f"Admin: {user.admin}")

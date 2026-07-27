@@ -11,14 +11,22 @@ from tortoise.fields import (
     ManyToManyField,
     OnDelete,
     ReverseRelation,
+    TextField,
 )
 from tortoise.models import Model
+
+
+class Setting(Model):
+    key = CharField(pk=True, max_length=255, unique=True)
+    value = TextField()
+    description = TextField()
 
 
 class User(Model):
     id = IntField(pk=True)
     email = CharField(max_length=255, unique=True)
     name = CharField(max_length=255, default="")
+    last_name = CharField(max_length=255, db_default="")
     code = CharField(max_length=255, default="")
     password_hash = CharField(max_length=255)
     admin = BooleanField(default=False)
@@ -27,6 +35,11 @@ class User(Model):
         "models.User", related_name="approvees", through="user_approver"
     )
     timesheets = ReverseRelation["Timesheet"]
+
+    @property
+    def full_name(self):
+        """Full name regardless of split name or not"""
+        return (self.name + " " + self.last_name).strip()
 
 
 class APIKey(Model):

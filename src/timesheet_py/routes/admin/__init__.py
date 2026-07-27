@@ -3,6 +3,7 @@ from nicegui import ui
 
 from timesheet_py.auth import CurrentUser
 from timesheet_py.components.admin_menu import AdminMenu
+from timesheet_py.routes.admin.settings import edit_settings
 
 from .activities import activities
 from .projects import projects
@@ -30,6 +31,7 @@ async def admin(user: CurrentUser):
                     "/users": lambda: users(user),
                     "/projects": projects,
                     "/activities": lambda: activities(user),
+                    "/settings": lambda: edit_settings(user),
                 }
             ).classes("w-full")
 

@@ -92,18 +92,16 @@ def new_user():
 
         await User.create(
             email=email.value,
-            name=name.value,
-            employee_id=employee_id.value,
             password_hash=password_hash,
         )
-        ui.navigate.to("/login")
+        ui.navigate.to("/login?redirect_to=/user")
 
     with ui.card().classes("absolute-center items-stretch"):
         ui.label("Create account")
         email = ui.input("Email").props("autofocus")
-        with ui.row():
-            name = ui.input("Name")
-            employee_id = ui.input("Employeed ID")
+        # with ui.row():
+        #     name = ui.input("Name")
+        #     employee_id = ui.input("Employeed ID")
 
         password = ui.input("Password", password=True, password_toggle_button=True)
 
