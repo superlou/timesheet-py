@@ -142,6 +142,9 @@ async def timesheet(timesheet_id: int, current_user: CurrentUser):
                 )
 
                 for date, hours in row.hours.items():
+                    if hours == 0:
+                        continue
+
                     await TimesheetEntry.create(
                         date=date, hours=hours, timesheet_row=timesheet_row
                     )
