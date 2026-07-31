@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "bcrypt>=5.0.0",
-    "nicegui>=3.14.0",
+    "nicegui>=3.15.0",
     "tortoise-orm>=1.1.7",
 ]
 
