@@ -33,9 +33,12 @@ class AuthMiddleWare(BaseHTTPMiddleware):
 
 
 async def get_user() -> User:
-    user = await User.filter(email=app.storage.user["email"]).first()
+    user = await User.filter(email=app.storage.user.get("email")).first()
     if user is None:
-        raise Exception()
+        app.storage.user.pop("email", None)
+        app.storage.user.pop("authenticated", None)
+        raise Exception("User not found")
+
     return user
 
 
@@ -85,6 +88,10 @@ async def login(redirect_to: str = "/") -> RedirectResponse | None:
     return None
 
 
+async def num_users() -> int:
+    return await User.all().count()
+
+
 @ui.page("/users/new")
 def new_user():
     ui.page_title("Create account")
@@ -95,8 +102,7 @@ def new_user():
         ).decode("utf-8")
 
         await User.create(
-            email=email.value,
-            password_hash=password_hash,
+            email=email.value, password_hash=password_hash, admin=await num_users() == 0
         )
         ui.navigate.to("/login?redirect_to=/user")
 
