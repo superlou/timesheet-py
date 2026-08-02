@@ -111,7 +111,7 @@ async def users(user: CurrentUser):
                         )
                     with ui.item_section().classes("col-3"):
                         ui.select(
-                            {user: user.name for user in users},
+                            {user: user.full_name for user in users},
                             value=[approver for approver in user.approvers],
                             multiple=True,
                             on_change=lambda evt, user=user: update_user_approvers(
