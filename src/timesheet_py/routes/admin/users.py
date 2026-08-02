@@ -78,38 +78,38 @@ async def users(user: CurrentUser):
 
         with ui.list().props("bordered separator").classes("items-center w-full"):
             with ui.item():
-                with ui.item_section():
+                with ui.item_section().classes("col-3"):
                     ui.item_label("User").props("header").classes("text-bold")
-                with ui.item_section():
+                with ui.item_section().classes("col-2"):
                     ui.item_label("Admin").props("header").classes("text-bold")
-                with ui.item_section():
-                    ui.item_label("API Access").props("header").classes("text-bold")
-                with ui.item_section():
+                with ui.item_section().classes("col-1"):
+                    ui.item_label("API").props("header").classes("text-bold")
+                with ui.item_section().classes("col-3"):
                     ui.item_label("Approver").props("header").classes("text-bold")
-                with ui.item_section():
+                with ui.item_section().classes("col-2"):
                     pass
 
             for user in users:
                 with ui.item():
-                    with ui.item_section():
+                    with ui.item_section().classes("col-3"):
                         ui.label(user.full_name)
                         ui.label(user.email).classes("text-caption")
                         ui.label(user.code).classes("text-caption")
-                    with ui.item_section():
+                    with ui.item_section().classes("col-2"):
                         ui.checkbox(
                             value=user.admin,
                             on_change=lambda evt, user=user: update_user_admin(
                                 user, evt.value
                             ),
                         )
-                    with ui.item_section():
+                    with ui.item_section().classes("col-1"):
                         ui.checkbox(
                             value=user.api_access,
                             on_change=lambda evt, user=user: update_user_api_access(
                                 user, evt.value
                             ),
                         )
-                    with ui.item_section():
+                    with ui.item_section().classes("col-3"):
                         ui.select(
                             {user: user.name for user in users},
                             value=[approver for approver in user.approvers],
@@ -118,7 +118,7 @@ async def users(user: CurrentUser):
                                 user, evt.value
                             ),
                         )
-                    with ui.item_section():
+                    with ui.item_section().classes("col-2"):
                         with ui.button_group().props("flat"):
                             ui.button(
                                 icon="lock_reset",
