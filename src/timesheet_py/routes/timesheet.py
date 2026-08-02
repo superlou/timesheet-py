@@ -51,15 +51,16 @@ async def build_rows(timesheet: Timesheet) -> list[TimesheetEditorRow]:
 
     if len(rows) == 0:
         previous_timesheet = await find_previous_timesheet(user, timesheet)
-        await previous_timesheet.fetch_related(
-            "timesheet_set",
-            "user",
-            "timesheet_rows",
-            "timesheet_rows__project",
-            "timesheet_rows__activity",
-        )
 
         if previous_timesheet:
+            await previous_timesheet.fetch_related(
+                "timesheet_set",
+                "user",
+                "timesheet_rows",
+                "timesheet_rows__project",
+                "timesheet_rows__activity",
+            )
+
             rows = [
                 TimesheetEditorRow(
                     project_id=r.project.id,
