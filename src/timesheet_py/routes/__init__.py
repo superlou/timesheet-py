@@ -1,1 +1,1 @@
-from . import admin, install, timesheet, user
+from . import admin, demo, timesheet, user

@@ -9,6 +9,7 @@ from tortoise.contrib.fastapi import register_tortoise
 from ..models import (
     Activity,
     Project,
+    Setting,
     Timesheet,
     TimesheetEntry,
     TimesheetRow,
@@ -16,33 +17,23 @@ from ..models import (
     User,
 )
 
-router = APIRouter(prefix="/install")
+router = APIRouter(prefix="/demo")
 
 
 @router.page("/")
-async def install():
+async def demo():
     data_path = Path("./data")
 
     async def run_setup():
-        print("Deleting existing data...")
-        for file in data_path.iterdir():
-            file.unlink()
-        data_path.mkdir(exist_ok=True)
-
-        print("Generating schemas...")
-        await Tortoise.close_connections()
-        await Tortoise.init(
-            db_url="sqlite://./data/db.sqlite3",
-            modules={"models": ["timesheet_py.models"]},
-        )
-        await Tortoise.generate_schemas()
+        print("Resetting to default data...")
+        await reset_to_default_data()
 
         print("Adding initial admin account...")
         password_hash = bcrypt.hashpw(
             password.value.encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
 
-        await User.create(
+        user = await User.create(
             email=email.value,
             name=name.value,
             password_hash=password_hash,
@@ -50,8 +41,8 @@ async def install():
         )
 
         print("Loading demo data...")
-        await load_demo_data()
-        ui.notify("Installation completed!")
+        await load_demo_data(user)
+        ui.notify("Demo setup completed!")
 
     ui.label("Initial admin account")
     name = ui.input("Name")
@@ -61,7 +52,18 @@ async def install():
     ui.button("Set up", on_click=run_setup)
 
 
-async def load_demo_data():
+async def reset_to_default_data():
+    await User.all().delete()
+    await Project.all().delete()
+    await Activity.all().delete()
+    await TimesheetSet.all().delete()
+
+    split_name = await Setting.get(key="split_name")
+    split_name.value = "0"
+    await split_name.save()
+
+
+async def load_demo_data(admin_user):
     await User.create(
         email="alice@test.com",
         name="Alice",
@@ -84,21 +86,22 @@ async def load_demo_data():
         admin=False,
     )
 
-    ts = await TimesheetSet.create(
+    tss = await TimesheetSet.create(
         start=date(2026, 7, 12),
         finish=date(2026, 7, 18),
         open=False,
     )
-    await ts.submitters.add(*await User.all())
-    for user in await User.all():
-        await Timesheet.create(timesheet_set=ts, user=user, created_on=date.today())
 
-    ts = await TimesheetSet.create(
+    for user in await User.all():
+        await Timesheet.create(timesheet_set=tss, user=user, created_on=date.today())
+
+    tss = await TimesheetSet.create(
         start=date(2026, 7, 12),
         finish=date(2026, 7, 18),
+        open=True,
     )
     for user in await User.all():
-        await Timesheet.create(timesheet_set=ts, user=user, created_on=date.today())
+        await Timesheet.create(timesheet_set=tss, user=user, created_on=date.today())
 
     a1 = await Activity.create(code="10", name="Engineering")
     a2 = await Activity.create(code="20", name="Training")
@@ -108,7 +111,7 @@ async def load_demo_data():
     p2 = await Project.create(code="1060.8", name="Rewind Project")
     p3 = await Project.create(code="5001.0", name="Vacation", open=False)
 
-    ts = await Timesheet.get(user_id=1, timesheet_set__open=True)
+    ts = await Timesheet.get(user=admin_user, timesheet_set__open=True)
 
     tr1 = await TimesheetRow.create(timesheet=ts, project=p1, activity=a1)
     await TimesheetEntry.create(timesheet_row=tr1, date=date(2026, 7, 13), hours=3)

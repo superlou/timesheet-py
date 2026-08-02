@@ -20,7 +20,7 @@ register_tortoise(
     modules={"models": ["timesheet_py.models"]},
 )
 
-app.include_router(routes.install.router)
+app.include_router(routes.demo.router)
 app.include_router(api.router)
 
 
