@@ -10,8 +10,8 @@ from .models import User
 
 unauthenticated_page_routes = {
     "/login",
-    "/install",
-    "/install/",
+    "/demo",
+    "/demo/",
     "/users/new",
     "/openapi.json",
 }
@@ -92,17 +92,20 @@ async def num_users() -> int:
     return await User.all().count()
 
 
+def create_salted_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
 @ui.page("/users/new")
 def new_user():
     ui.page_title("Create account")
 
     async def create_user() -> None:
-        password_hash = bcrypt.hashpw(
-            password.value.encode("utf-8"), bcrypt.gensalt()
-        ).decode("utf-8")
-
+        password_hash = create_salted_hash(password.value)
         await User.create(
-            email=email.value, password_hash=password_hash, admin=await num_users() == 0
+            email=email.value,
+            password_hash=password_hash,
+            admin=await num_users() == 0,
         )
         ui.navigate.to("/login?redirect_to=/user")
 

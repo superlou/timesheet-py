@@ -1,6 +1,9 @@
+import secrets
+import string
+
 from nicegui import ui
 
-from timesheet_py.auth import CurrentUser
+from timesheet_py.auth import CurrentUser, create_salted_hash
 from timesheet_py.models import User
 
 
@@ -23,6 +26,11 @@ async def users(user: CurrentUser):
         await user.delete()
         user_table.refresh()
 
+    async def reset_user_password(user: User, new_pass: str):
+        user.password_hash = create_salted_hash(new_pass)
+        await user.save()
+        dialog.close()
+
     dialog = ui.dialog()
 
     def open_delete_user_dialog(user: User):
@@ -32,14 +40,35 @@ async def users(user: CurrentUser):
                 ui.label(f"Delete {user.name}?").classes("text-h6")
 
             with ui.card_section():
-                ui.label(
-                    f"This will delete all data associated with the user {user.email}."
-                )
+                ui.label(f"This will delete all data for user {user.email}.")
 
             with ui.card_section():
                 with ui.row():
-                    ui.button("Cancel", on_click=dialog.close)
+                    ui.button("Cancel", on_click=dialog.close).props("flat")
                     ui.button("Delete", on_click=lambda: delete_user(user))
+
+        dialog.open()
+
+    def open_reset_user_password_dialog(user: User):
+        dialog.clear()
+        with dialog, ui.card():
+            with ui.card_section():
+                ui.label(f"Reset {user.name}'s password?").classes("text-h6")
+
+            with ui.card_section():
+                ui.label(f"This will reset the password for user {user.email}.")
+                new_password = "".join(secrets.choice(string.digits) for _ in range(6))
+                new_password_input = ui.input("New password", value=new_password)
+
+            with ui.card_section():
+                with ui.row():
+                    ui.button("Cancel", on_click=dialog.close).props("flat")
+                    ui.button(
+                        "Reset",
+                        on_click=lambda: reset_user_password(
+                            user, new_password_input.value
+                        ),
+                    )
 
         dialog.open()
 
@@ -90,10 +119,19 @@ async def users(user: CurrentUser):
                             ),
                         )
                     with ui.item_section():
-                        ui.button(
-                            icon="delete",
-                            on_click=lambda user=user: open_delete_user_dialog(user),
-                        ).props("flat")
+                        with ui.button_group().props("flat"):
+                            ui.button(
+                                icon="lock_reset",
+                                on_click=lambda user=user: open_reset_user_password_dialog(
+                                    user
+                                ),
+                            ).props("flat")
+                            ui.button(
+                                icon="delete",
+                                on_click=lambda user=user: open_delete_user_dialog(
+                                    user
+                                ),
+                            ).props("flat")
 
     ui.label("Users")
     await user_table()
