@@ -42,6 +42,7 @@ async def save(new_setting: dict[str, Any]):
 
 
 async def edit_settings(user):
+    ui.page_title("Admin - Settings")
     ui.label("Settings")
 
     settings = {}

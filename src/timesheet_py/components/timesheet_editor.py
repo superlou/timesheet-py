@@ -4,6 +4,8 @@ from typing import Any, Self
 
 from nicegui import binding, ui
 
+from timesheet_py.helpers.fmt_date import fmt_month_day
+
 
 @dataclass
 class TimesheetEditorRow:
@@ -64,7 +66,9 @@ class TimesheetEditor(ui.element):
         ui.label("Activity")
 
         for d in self.dates:
-            ui.html(f"{d.strftime('%a')}<br/>{d.month}/{d.day}").classes("text-center")
+            ui.html(f"{d.strftime('%a')}<br/>" + fmt_month_day(d)).classes(
+                "text-center"
+            )
 
         ui.label("Total")
         ui.label("")

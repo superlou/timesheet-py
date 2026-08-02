@@ -92,6 +92,11 @@ async def open_timesheets_list(current_user: User, request: Request):
                     timesheet_status_row(timesheet)
 
 
+def set_title(path: str):
+    # Set title if nothing else sets it
+    ui.page_title("Timesheet Entry")
+
+
 @ui.page("/")
 @ui.page("/timesheet/{timesheet_id}")
 @ui.page("/user")
@@ -101,6 +106,7 @@ async def index(
     current_user: CurrentUser,
     request: Request,
 ):
+    ui.page_title("Timesheet Entry")
     header(current_user)
 
     ui.sub_pages(
@@ -114,6 +120,8 @@ async def index(
             "/admin": lambda: admin(current_user),
         }
     ).classes("w-full")
+
+    ui.context.client.sub_pages_router.on_path_changed(set_title)
 
 
 secret = "nB1NgSC1EbOtojVIpZ2TGBhpUTs1h6R1U4jFpfJXA+c="

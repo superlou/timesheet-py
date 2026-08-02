@@ -5,6 +5,8 @@ from timesheet_py.models import User
 
 
 async def users(user: CurrentUser):
+    ui.page_title("Admin - Users")
+
     async def update_user_admin(user, value):
         user.admin = value
         await user.save()

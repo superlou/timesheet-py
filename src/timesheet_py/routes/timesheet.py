@@ -7,6 +7,7 @@ from tortoise.transactions import in_transaction
 from timesheet_py.auth import CurrentUser
 from timesheet_py.components.header import header
 from timesheet_py.components.timesheet_editor import TimesheetEditor, TimesheetEditorRow
+from timesheet_py.helpers.fmt_date import fmt_month_day
 from timesheet_py.models import (
     Activity,
     Project,
@@ -91,6 +92,13 @@ async def timesheet(timesheet_id: int, current_user: CurrentUser):
         "user__approvers",
     )
     timesheet_set = timesheet.timesheet_set
+
+    title = (
+        fmt_month_day(timesheet_set.start)
+        + " to "
+        + fmt_month_day(timesheet_set.finish)
+    )
+    ui.page_title(title)
 
     if not can_view_timesheet(timesheet, current_user):
         raise HTTPException(status_code=403)

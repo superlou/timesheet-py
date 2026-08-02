@@ -50,6 +50,8 @@ async def logout() -> None:
 
 @ui.page("/login")
 async def login(redirect_to: str = "/") -> RedirectResponse | None:
+    ui.page_title("Log in")
+
     if app.storage.user.get("authenticated"):
         return RedirectResponse(redirect_to)
 
@@ -85,6 +87,8 @@ async def login(redirect_to: str = "/") -> RedirectResponse | None:
 
 @ui.page("/users/new")
 def new_user():
+    ui.page_title("Create account")
+
     async def create_user() -> None:
         password_hash = bcrypt.hashpw(
             password.value.encode("utf-8"), bcrypt.gensalt()

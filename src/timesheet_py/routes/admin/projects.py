@@ -51,6 +51,8 @@ class ProjectRow:
 
 
 async def projects():
+    ui.page_title("Admin - Projects")
+
     @ui.refreshable
     async def projects_list():
         projects = await Project.all()

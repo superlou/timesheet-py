@@ -53,6 +53,8 @@ class ActivityRow:
 
 
 async def activities(user: CurrentUser):
+    ui.page_title("Admin - Activities")
+
     @ui.refreshable
     async def activities_list():
         activities = await Activity.all()

@@ -6,6 +6,8 @@ from timesheet_py.models import Timesheet, TimesheetSet, User
 
 
 async def timesheet_sets(user: CurrentUser):
+    ui.page_title("Admin - Timesheet Sets")
+
     @ui.refreshable
     async def timesheets_list_items(timesheet_sets: list[TimesheetSet]):
         for timesheet_set in timesheet_sets:
@@ -50,6 +52,8 @@ async def timesheet_sets(user: CurrentUser):
 
 
 async def timesheet_sets_new(user: CurrentUser):
+    ui.page_title("Admin - New Timesheet Set")
+
     async def create_timesheet_set():
         start, finish = date_range.value.split(" - ")
         timesheet_set = TimesheetSet(start=start, finish=finish, open=True)
@@ -83,6 +87,8 @@ async def timesheet_sets_new(user: CurrentUser):
 
 
 async def timesheet_sets_edit(timesheet_set_id: int, user: CurrentUser):
+    ui.page_title("Admin - Edit Timesheet Set")
+
     async def delete():
         await timesheet_set.delete()
         ui.navigate.to("/admin/timesheet_sets")

@@ -37,5 +37,6 @@ async def admin(user: CurrentUser):
 
 
 async def admin_index():
+    ui.page_title("Admin")
     ui.label("Admin")
     ui.label("These settings configure the Timesheet Entry application.")

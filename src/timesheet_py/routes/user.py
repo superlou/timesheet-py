@@ -19,6 +19,8 @@ async def edit_user_profile(user: CurrentUser):
         await APIKey.create(user=user, key=secrets.token_urlsafe(32))
         list_keys.refresh()
 
+    ui.page_title("My Profile")
+
     @ui.refreshable
     async def list_keys():
         with ui.list().props("bordered separator").classes("w-full"):
